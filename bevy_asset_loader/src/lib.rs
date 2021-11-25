@@ -66,10 +66,13 @@ pub use bevy_asset_loader_derive::AssetCollection;
 use bevy::app::App;
 use bevy::asset::{AssetServer, HandleUntyped, LoadState};
 use bevy::ecs::prelude::IntoExclusiveSystem;
-use bevy::ecs::schedule::{State, StateData};
-use bevy::prelude::{FromWorld, SystemSet, World};
+use bevy::ecs::schedule::{State, StateData, SystemLabel, SystemSet};
+use bevy::ecs::world::{FromWorld, World};
 use bevy::utils::HashMap;
 use std::marker::PhantomData;
+
+#[cfg(feature = "progress_tracking")]
+use bevy_progress_tracking::{Progress, ProgressTracker};
 
 /// Trait to mark a struct as a collection of assets
 ///
@@ -301,11 +304,26 @@ fn check_loading_state<T: StateData, Assets: AssetCollection>(world: &mut World)
         let asset_server = cell
             .get_resource::<AssetServer>()
             .expect("Cannot get AssetServer resource");
-        let load_state = asset_server
-            .get_group_load_state(loading_asset_handles.handles.iter().map(|handle| handle.id));
-        if load_state != LoadState::Loaded {
+        let loaded_handles = loading_asset_handles
+            .handles
+            .iter()
+            .map(|handle| handle.id)
+            .map(|handle| asset_server.get_load_state(handle))
+            .filter(|state| state == &LoadState::Loaded)
+            .count();
+
+        #[cfg(feature = "progress_tracking")]
+        let mut progress = cell
+            .get_resource_mut::<Progress>()
+            .expect("Progress resource not found");
+
+        if loaded_handles < loading_asset_handles.handles.len() {
+            #[cfg(feature = "progress_tracking")]
+            progress.track(loading_asset_handles.handles.len(), loaded_handles);
             return;
         }
+        #[cfg(feature = "progress_tracking")]
+        progress.persist_done_tasks(loaded_handles);
 
         let mut state = cell
             .get_resource_mut::<State<T>>()
@@ -663,10 +681,27 @@ where
             app.world.insert_resource(asset_loader_configuration);
         }
         app.init_resource::<AssetKeys>();
-        app.add_system_set(self.load)
-            .add_system_set(self.check)
-            .add_system_set(self.post_process);
+        #[cfg(feature = "progress_tracking")]
+        app.add_plugin(ProgressTracker);
+        app.add_system_set(self.load.label(AssetLoading::StartLoading))
+            .add_system_set(self.check.label(AssetLoading::CheckLoadingState))
+            .add_system_set(self.post_process.label(AssetLoading::PostProcess));
     }
+}
+
+/// System labels to control the execution order of systems in this Plugin
+///
+/// Use this to e.g. run your systems before or after `bevy_asset_loader` checks all
+/// asset handles for their loading state.
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(SystemLabel)]
+pub enum AssetLoading {
+    /// Label given to the system initializing the asset loading `on_enter` of the loading state
+    StartLoading,
+    /// Label given to the systems checking the loading state of all asset handles `on_update` of the loading state
+    CheckLoadingState,
+    /// Label given to the systems building the [AssetCollection]s `on_exit` of the loading state
+    PostProcess
 }
 
 #[cfg(feature = "render")]

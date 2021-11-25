@@ -15,10 +15,13 @@ readme = "../README.md"
 [features]
 # This feature requires bevy's TextureAtlas and StandardMaterial assets to be available ("bevy/render")
 render = ["bevy_asset_loader_derive/render"]
+progress_tracking = ["bevy_progress_tracking"]
 
 [dependencies]
 bevy = { version = "0.6", default-features = false }
 bevy_asset_loader_derive = { version = "=0.9.0-github.main", path = "../bevy_asset_loader_derive" }
+#bevy_progress_tracking = { path = "../../bevy_progress_tracking", optional = true }
+bevy_progress_tracking = { git = "https://github.com/NiklasEi/bevy_progress_tracking", optional = true }
 
 [dev-dependencies]
 bevy = { version = "0.6", features = ["vorbis"] }
@@ -44,6 +47,11 @@ path = "examples/dynamic_asset.rs"
 [[example]]
 name = "no_loading_state"
 path = "examples/no_loading_state.rs"
+
+[[example]]
+name = "progress_tracking"
+path = "examples/progress_tracking.rs"
+required-features = ["progress_tracking"]
 
 [[example]]
 name = "color_material"
