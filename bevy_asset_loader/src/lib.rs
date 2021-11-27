@@ -72,7 +72,7 @@ use bevy::utils::HashMap;
 use std::marker::PhantomData;
 
 #[cfg(feature = "progress_tracking")]
-use bevy_progress_tracking::{Progress, ProgressTracker};
+use bevy_progress_tracking::Progress;
 
 /// Trait to mark a struct as a collection of assets
 ///
@@ -682,7 +682,7 @@ where
         }
         app.init_resource::<AssetKeys>();
         #[cfg(feature = "progress_tracking")]
-        app.add_plugin(ProgressTracker);
+        app.init_resource::<Progress>();
         app.add_system_set(self.load.label(AssetLoading::StartLoading))
             .add_system_set(self.check.label(AssetLoading::CheckLoadingState))
             .add_system_set(self.post_process.label(AssetLoading::PostProcess));
@@ -693,15 +693,14 @@ where
 ///
 /// Use this to e.g. run your systems before or after `bevy_asset_loader` checks all
 /// asset handles for their loading state.
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-#[derive(SystemLabel)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, SystemLabel)]
 pub enum AssetLoading {
     /// Label given to the system initializing the asset loading `on_enter` of the loading state
     StartLoading,
     /// Label given to the systems checking the loading state of all asset handles `on_update` of the loading state
     CheckLoadingState,
     /// Label given to the systems building the [AssetCollection]s `on_exit` of the loading state
-    PostProcess
+    PostProcess,
 }
 
 #[cfg(feature = "render")]

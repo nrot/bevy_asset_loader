@@ -15,8 +15,16 @@ fn main() {
         .add_system_set(SystemSet::on_enter(MyStates::Next).with_system(quit.system()))
         .add_system_set(
             SystemSet::on_update(MyStates::AssetLoading)
-                .with_system(track_fake_long_task.system().before(AssetLoading::CheckLoadingState))
-                .with_system(print_progress.system().after(AssetLoading::CheckLoadingState)),
+                .with_system(
+                    track_fake_long_task
+                        .system()
+                        .before(AssetLoading::CheckLoadingState),
+                )
+                .with_system(
+                    print_progress
+                        .system()
+                        .after(AssetLoading::CheckLoadingState),
+                ),
         )
         .run();
 }
