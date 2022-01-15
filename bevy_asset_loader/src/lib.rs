@@ -72,7 +72,7 @@ use bevy::utils::HashMap;
 use std::marker::PhantomData;
 
 #[cfg(feature = "progress_tracking")]
-use bevy_progress_tracking::Progress;
+use bevy_loading::{Progress, ProgressCounter};
 
 /// Trait to mark a struct as a collection of assets
 ///
@@ -314,16 +314,22 @@ fn check_loading_state<T: StateData, Assets: AssetCollection>(world: &mut World)
 
         #[cfg(feature = "progress_tracking")]
         let mut progress = cell
-            .get_resource_mut::<Progress>()
+            .get_resource_mut::<ProgressCounter>()
             .expect("Progress resource not found");
 
         if loaded_handles < loading_asset_handles.handles.len() {
             #[cfg(feature = "progress_tracking")]
-            progress.track(loading_asset_handles.handles.len(), loaded_handles);
+            progress.manually_tick(Progress {
+                total: loading_asset_handles.handles.len(),
+                done: loaded_handles,
+            });
             return;
         }
         #[cfg(feature = "progress_tracking")]
-        progress.persist_done_tasks(loaded_handles);
+        progress.persist_progress(Progress {
+            total: loaded_handles,
+            done: loaded_handles,
+        });
 
         let mut state = cell
             .get_resource_mut::<State<T>>()
@@ -681,8 +687,6 @@ where
             app.world.insert_resource(asset_loader_configuration);
         }
         app.init_resource::<AssetKeys>();
-        #[cfg(feature = "progress_tracking")]
-        app.init_resource::<Progress>();
         app.add_system_set(self.load.label(AssetLoading::StartLoading))
             .add_system_set(self.check.label(AssetLoading::CheckLoadingState))
             .add_system_set(self.post_process.label(AssetLoading::PostProcess));

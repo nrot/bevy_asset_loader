@@ -15,13 +15,13 @@ readme = "../README.md"
 [features]
 # This feature requires bevy's TextureAtlas and StandardMaterial assets to be available ("bevy/render")
 render = ["bevy_asset_loader_derive/render"]
-progress_tracking = ["bevy_progress_tracking"]
+progress_tracking = ["bevy_loading"]
 
 [dependencies]
 bevy = { version = "0.6", default-features = false }
 bevy_asset_loader_derive = { version = "=0.9.0-github.main", path = "../bevy_asset_loader_derive" }
-#bevy_progress_tracking = { path = "../../bevy_progress_tracking", optional = true }
-bevy_progress_tracking = { git = "https://github.com/NiklasEi/bevy_progress_tracking", optional = true }
+bevy_loading = { path = "../../bevy_loading", optional = true }
+#bevy_loading = { git = "https://github.com/inodentry/bevy_loading", optional = true }
 
 [dev-dependencies]
 bevy = { version = "0.6", features = ["vorbis"] }
